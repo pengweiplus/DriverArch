@@ -4,8 +4,7 @@ import math
 import random
 
 
-#public function
-#
+# sign function
 def sign(val):
 	
 	if val>1e-6:
@@ -18,6 +17,8 @@ def sign(val):
 	return val
 
 #zone-functon
+# return 0: in side
+# return +/- 1:outside
 def fsg(x,d):
 
 	output = (sign(x+d) - sign(x-d))/2
@@ -27,15 +28,12 @@ def fsg(x,d):
 #power function
 def fal(e,alpha,zeta):
 
-	s = (sign(e+zeta)-sign(e-zeta))/2
+	s = fsg(e,zeta)
 
 	fal_output = e*s/(pow(zeta,1-alpha))+pow(abs(e),alpha)*sign(e)*(1-s)
 
 	return fal_output
 
-
-
-######################################################################
 #
 #class td filter
 #
@@ -54,53 +52,75 @@ class ADRC_TD():
 		self.fh = 0.0
 
 	#
-	# TD tracker
+	# TD tracker(Second-Order)
 	#
 	# x1(k+1) = x1(k) + h * x2(k)
 	# x2(k+1) = x2(k) - r0 * u(k)
 	# fhan(x1,x2,r0,h0)
 
 	def fhan(self,excpt):
-
+		# Calculate the error between original signal and excepted signal.
 		x1_delta = self.x1 - excpt
+		# Optimized step value.
 		self.h0 = self.N0 * self.h
+		# Calulate d and a0
+		# d means the limited increment of r
+		# a0 means the increment of x2
 		d = self.r * self.h0 * self.h0
 		a0 = self.x2 * self.h0
+		# Optimized delta
 		y = x1_delta + a0
-
+		
+		# a1 means limit of delta
+		# a2 means optimized delta based x2
 		a1 = math.sqrt(d*(d+8*abs(y)))
 		a2 = a0 + sign(y)*(a1-d)/2
+
+		# Calculate the final delta of x2 :a.
+		# If outof d, a is a2
+		# If inside d, a is a0+y
 		a = (a0 + y)*fsg(y,d) + a2*(1 - fsg(y,d))
 
+		# Calculate the final delta of x2.
+		# If outof d, the increment of x2 is r*sign(a)
+		# If inside d, a is r*(a/d)
 		self.fh = -self.r * (a/d) * fsg(a,d) - self.r * sign(a)*(1-fsg(a,d))
 
+		# Update x1 by x2,and x2 by fh
 		self.x1 = self.x1 + self.h * self.x2
 		self.x2 = self.x2 + self.h * self.fh
+
 #
 #class ESO
 #
 class ADRC_ESO():
 	"""docstring for ADRC_ESO"""
-	def __init__(self,beta01,beat02,beta03,z1,b0):
+	def __init__(self,beta01,beta02,beta03,z1,b0):
 		self.beta01 = beta01
 		self.beta02 = beta02
 		self.beta03 = beta03
 		self.b0 = b0
 		self.e = 0.0
+		self.z1 = 0.0
+		self.z2 = 0.0
+		self.z3 = 0.0
+		self.y = 0.0
+		self.b = 0
+		self.u = 0
 
 	def fleso(self):
-		eso.e = eso.z1 - eso.y
+		self.e = self.z1 - self.y
 		#update observe
-		eso.z1 += eso.z2 - eso.beta01 * eso.e
-		eso.z2 += eso.z3 - eso.beta02 * eso.e + eso.b * eso.u
-		eso.z3 += -eso.beta03*eso.e
+		self.z1 += self.z2 - self.beta01 * self.e
+		self.z2 += self.z3 - self.beta02 * self.e + self.b * self.u
+		self.z3 += -self.beta03*self.e
 
 #
 #class NL
 #
 class ADRC_NL():
 	"""docstring for ADRC_NL"""
-	def __init__(self,beta0,beta1,beat2,N1,C,alpha1,alpha2,zeta,b):
+	def __init__(self,beta0,beta1,beta2,N1,C,alpha1,alpha2,zeta,b):
 		self.beta0 = beta0
 		self.beta1 = beta1
 		self.beta2 = beta2
@@ -111,7 +131,12 @@ class ADRC_NL():
 		self.zeta = zeta
 		self.b = b
 
-
+def graph_display(plot,xnums,ynums,ID,xval,yval,name,xlabs,ylabs,color):
+	ax = plot.add_subplot(xnums,ynums,ID)
+	ax.set_xlabel(xlabs)
+	ax.set_ylabel(ylabs)
+	ax.plot(xval, yval, color=color, label=name)
+	ax.legend()
 
 #
 #Setup function
@@ -125,7 +150,7 @@ def setup():
 	print('b1=%f,b2=%f,b3=%f' %(b1,b2,b3))
 	
 	#r h N0 C
-	td = ADRC_TD(300000.0,0.01,3.0,1.0);
+	td = ADRC_TD(300000.0,0.01,5.0,1.0);
 	
 	#set cycle times
 	size=500
@@ -154,30 +179,10 @@ def setup():
 		Y_TD_fh[k] = td.fh
 
 	fig = plt.figure()
-	ax1 = fig.add_subplot(3, 2, 1)
-	ax2 = fig.add_subplot(3, 2, 3)
-	ax3 = fig.add_subplot(3, 2, 5)
-	ax4 = fig.add_subplot(3, 2, 2)
-	ax5 = fig.add_subplot(3, 2, 4)
-	ax6 = fig.add_subplot(3, 2, 6)
-
-	ax1.set_xlabel("cycle time")
-	ax1.set_ylabel("rate")
-	ax1.plot(X, Y_TD_fh, color='red', label='fh')
-	ax1.legend()
-
-	ax2.set_xlabel("cycle time")
-	ax2.set_ylabel("rate")
-	ax2.plot(X, Y_TD_x1,  color='green', label='x1')
-	ax2.plot(X, Y_TD_s,  color='red', label='signal')
-	ax2.legend()
-
-	ax3.set_xlabel("cycle time")
-	ax3.set_ylabel("rate")
-	# ax3.plot(X, Y_TD_fh,  color='blue', label='fh')
-	ax3.plot(X, Y_TD_x2,  color='blue', label='x2')	
-	ax3.legend()
-
+	graph_display(fig,3,2,1,X,Y_TD_fh,"TD fh","cycle time","rate",'red')
+	graph_display(fig,3,2,5,X,Y_TD_x1,"TD x1","cycle time","rate",'red')
+	graph_display(fig,3,2,5,X,Y_TD_s,"TD signal","cycle time","rate",'green')
+	graph_display(fig,3,2,3,X,Y_TD_x2,"TD x2","cycle time","rate",'red')
 	plt.show()
 
 
