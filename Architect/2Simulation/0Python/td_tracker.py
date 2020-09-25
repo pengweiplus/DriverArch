@@ -117,9 +117,9 @@ def getDBPath(argv):
 def setup():
 	
 	#Open DB file
-	conn = sqlite3.connect('/home/peng/Documents/2020-04-10-09-04-08.db')
+	conn = sqlite3.connect('/home/peng/Documents/2020-08-20-10-13-30.db')
 	cursor = conn.cursor()
-	cursor.execute("SELECT power FROM BEACON_POWER;")
+	cursor.execute("SELECT res1 FROM BEACON_POWER;")
 	rows=cursor.fetchall()
 	print(rows[1][0])
 
