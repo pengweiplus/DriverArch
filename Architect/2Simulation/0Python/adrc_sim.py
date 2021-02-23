@@ -150,7 +150,7 @@ def setup():
 	print('b1=%f,b2=%f,b3=%f' %(b1,b2,b3))
 	
 	#r h N0 C
-	td = ADRC_TD(300000.0,0.01,5.0,1.0);
+	td = ADRC_TD(300000.0,0.01,10.0,1);
 	
 	#set cycle times
 	size=500

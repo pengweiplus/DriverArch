@@ -1,0 +1,17 @@
+
+========================================================================================
+/////////////////////////python/////////////////////////////////////////////////////////
+========================================================================================
+1.罗列已安装版本信息
+update-alternatives --list python（这是一个切换Python版本的指令）
+
+2.设置版本优先级
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.4 2
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 3
+
+#update-alternatives是ubuntu系统中专门维护系统命令链接符的工具，通过它可以很方便的设置系统默认使用哪个命令、哪个软件版本
+# 上面三行指令最后的数字 1 2 3 分别代表优先级。1是最高。所以等下 config的时候，会发现默认版本是2.7（因为它的优先级设为了1）
+
+3.选择版本，输入具体对应数字
+sudo update-alternatives --config python（这是一个切换Python版本的指令）
