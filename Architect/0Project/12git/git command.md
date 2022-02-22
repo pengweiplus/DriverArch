@@ -67,8 +67,11 @@
 ---
 ## 五、撤销操作
 * 丢弃工作区修改<br>
-`git checkout -- file` 
+`git checkout -- filename` 
 > 命令中的--很重要，没有--，就变成了“切换到另一个分支”的命令
+
+* 丢弃工作区所有未提交的修改<br>
+`git checkout .`
 
 * 撤销pull<br>
 `git reflog`
